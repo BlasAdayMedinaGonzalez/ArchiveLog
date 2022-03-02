@@ -18,26 +18,61 @@ public class Main {
 
         try {
             System.out.println("Enter host ip:");
-            String hostIp = sc.nextLine();
+            String hostIp = sc.next();
             System.out.println("Enter port: ");
             int port = sc.nextInt();
 
             System.out.println("Enter username:");
-            String username = sc.nextLine();
+            String hostname = sc.next();
+
+            session = new JSch().getSession(hostname,hostIp,port);
 
             System.out.println("Enter password:");
-            String password = sc.nextLine();
+            String password = sc.next();
             session.setPassword(password);
 
-            session = new JSch().getSession(username,hostIp,port);
+            session.setConfig("StrictHostKeyChecking", "no");
 
 
             session.connect();
             System.out.println("Connected...");
 
+            boolean fileStatus = true;
+            do {
+                channel = (ChannelExec) session.openChannel("exec");
 
+                System.out.println("Enter file name: ");
+                String fileName = sc.next();
 
+                channel.setCommand("cat /var/log/" + fileName + ".log");
 
+                ByteArrayOutputStream responseStream = new ByteArrayOutputStream();
+
+                channel.setOutputStream(responseStream);
+
+                channel.connect();
+
+                while (channel.isConnected()) {
+                    Thread.sleep(100);
+                }
+
+                String responseString = new String(responseStream.toByteArray());
+
+                if (responseString.isEmpty()) {
+                    System.out.println("File no exists");
+                } else {
+                    System.out.println(responseString);
+                }
+
+                System.out.println("Do you want to see another file? YES/NO ");
+                String continues = sc.next();
+                if (continues.equals("NO")) {
+                    fileStatus = false;
+                }
+
+            } while (fileStatus);
+
+            System.out.println("Finalizando programa...");
 
         } catch (JSchException | InterruptedException e) {
             e.printStackTrace();
